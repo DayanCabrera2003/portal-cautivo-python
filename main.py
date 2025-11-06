@@ -1,6 +1,15 @@
+from core.http_server import start_server
+from utils.logger import logger
+from utils.config import SERVER_PORT
+
 def main():
-    
-    print("Hello World!")
+    try:
+        logger.info("Starting the Captive Portal server...")
+        start_server(port=SERVER_PORT)
+    except OSError as e:
+        logger.error(f"Failed to bind the server to port {SERVER_PORT}: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
 
 if __name__ == '__main__':
     main()
