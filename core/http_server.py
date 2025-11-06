@@ -1,6 +1,6 @@
 import ssl
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from utils.logger import logger  # Importar el logger
+from utils.logger import logger  
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -70,5 +70,7 @@ def start_server(host="0.0.0.0", port=8080, secure=False):
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        logger.info("Shutting down server.")
+        logger.info("Shutting down server due to KeyboardInterrupt.")
+    finally:
         httpd.server_close()
+        logger.info("Server has been shut down.")
