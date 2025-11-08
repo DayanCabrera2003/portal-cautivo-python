@@ -1,4 +1,5 @@
 from utils.data_handler import load_json
+from utils.logger import logger
 
 def validate_credentials(username, password):
     """
@@ -18,11 +19,16 @@ def validate_credentials(username, password):
         user_data = load_json("data/user.json")
         
         #Check if the username is correct
-        if username in user_data and user_data[username] == password: return True
+        if username in user_data and user_data[username] == password:
+            logger.info(f"Authentification succes for user '{username}'")
+            return True
+        else:
+            logger.warning(f"Athentification failed for the user '{username}'")
         
-        return False
     except FileNotFoundError:
+        logger.error("The file 'data/user.json' does not exist")
         raise FileNotFoundError(f"The file 'data/user.json' does not exist")
     except ValueError as e:
+        logger.error("Error loading user data: {e}")
         raise ValueError (f"Error loading user data: {e}")
         
