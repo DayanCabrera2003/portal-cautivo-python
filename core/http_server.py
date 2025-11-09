@@ -4,6 +4,7 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from utils.logger import logger
 from core.auth_manager import validate_credentials
+from core.session_manager import create_session
   
 
 
@@ -46,21 +47,27 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
-            #Parse URL-encoded form data
+            # Parse URL-encoded form data
             form = urllib.parse.parse_qs(post_data.decode('utf-8'))
             username = form.get('username', [''])[0]
             password = form.get('password', [''])[0]
             logger.info(f"Received login attempt for username: '{username}'")
             if validate_credentials(username, password):
-                file_path = "web/login_succes.html"
+                # Create session and set cookie
+                session_id = create_session({"username": username})
+                self.send_response(302)
+                self.send_header("Location", "/welcome")
+                self.send_header("Set-Cookie", f"session_id={session_id}; HttpOnly; Path=/")
+                self.end_headers()
+                logger.info(f"User '{username}' authenticated. Session started and redirected to /welcome.")
             else:
                 file_path = "web/login_failed.html"
-            with open(file_path, "r", encoding="utf-8") as file:
-                response_html = file.read().format(username=username)
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(response_html.encode("utf-8"))
+                with open(file_path, "r", encoding="utf-8") as file:
+                    response_html = file.read().format(username=username)
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(response_html.encode("utf-8"))
         except Exception as e:
             self.send_response(500)
             self.send_header("Content-type", "text/plain")
