@@ -1,16 +1,32 @@
 import ssl
 import urllib.parse
+import http.cookies
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from utils.logger import logger
 from core.auth_manager import validate_credentials
-from core.session_manager import create_session
+from core.session_manager import create_session, get_session
   
 
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET requests and serve the static HTML file."""
+        # Check for session cookie and validate
+        if 'Cookie' in self.headers:
+            cookie = http.cookies.SimpleCookie(self.headers['Cookie'])
+            if 'session_id' in cookie:
+                session_id = cookie['session_id'].value
+                session = get_session(session_id)
+                if session:
+                    # Valid session, redirect to access granted endpoint (using existing /login_succes as the success page)
+                    self.send_response(302)
+                    self.send_header("Location", "/login_succes")
+                    self.end_headers()
+                    logger.info(f"Valid session for user '{session.get('username', 'unknown')}'. Redirected to /login_succes.")
+                    return
+        
+        # If no valid session, serve the appropriate page
         try:
             # Define the path to the static file
             if self.path == "/login_succes":
