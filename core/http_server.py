@@ -1,6 +1,7 @@
 import ssl
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from utils.logger import logger  
+import urllib.parse
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -41,7 +42,10 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
-            logger.info(f"Received POST data: {post_data.decode('utf-8')}")
+            #Parse URL-encoded form data
+            form = urllib.parse.parse_qs(post_data.decode('utf-8'))
+            username = form.get('username', [''])[0]
+            logger.info(f"Received login attempt for username: '{username}'")
             self.send_response(200)
             self.send_header("Content-type", "text/plain")
             self.end_headers()
