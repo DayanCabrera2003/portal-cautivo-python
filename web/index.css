@@ -1,79 +1,106 @@
+/* Importar una fuente moderna (si se usa en un entorno con acceso a internet) */
+/* @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap'); */
+
 *, ::after, ::before {
     box-sizing: border-box;
+    /* Transición suave aplicada a la mayoría de los elementos */
+    transition: all 0.3s ease-in-out; 
 }
 
 body {
-    background-color: #212121;
-    color: #fff;
-    font-family: monospace, serif;
-    letter-spacing: 0.05em;
+    background-color: #121212; /* Negro profundo */
+    color: #E0E0E0; /* Gris claro para el texto principal */
+    font-family: 'Poppins', 'Roboto', sans-serif, monospace; /* Fuente moderna con fallbacks */
+    letter-spacing: 0.02em; 
     min-height: 100vh;
     margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
+    /* Opcional: Para un efecto más inmersivo */
+    /* overflow: hidden; */ 
 }
 
 h1 {
-    font-size: 23px;
+    font-size: 26px; 
     text-align: center;
+    margin-bottom: 30px;
+    font-weight: 600; 
+    /* Sombra de texto sutil con el color de acento */
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.4); 
 }
 
 .form {
-    width: 300px;
-    padding: 64px 15px 24px;
+    width: 350px; /* Un poco más ancho */
+    padding: 40px 30px; 
     margin: 0 auto;
+    background: rgba(33, 33, 33, 0.8); /* Fondo semi-transparente oscuro */
+    border-radius: 10px; 
+    /* Sombra de caja elegante */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 212, 255, 0.1); 
 }
 
 .control {
-    margin: 0 0 24px;
+    margin: 0 0 20px;
 }
 
 .control input {
     width: 100%;
-    padding: 14px 16px;
+    padding: 16px 20px;
     border: 0;
     background: transparent;
     color: #fff;
-    font-family: monospace, serif;
-    letter-spacing: 0.05em;
+    font-family: inherit; 
+    letter-spacing: 0.02em;
     font-size: 16px;
 }
 
-.control input:hover,
-.control input:focus {
+.control input:focus,
+.control input:hover {
     outline: none;
     border: 0;
 }
 
+/* --- Botón de Login y Controles (Reutiliza la clase .btn) --- */
 .btn {
     width: 100%;
     display: block;
-    padding: 14px 16px;
+    padding: 16px 20px;
     background: transparent;
     outline: none;
     border: 0;
     color: #fff;
     letter-spacing: 0.1em;
-    font-weight: bold;
-    font-family: monospace;
-    font-size: 16px;
+    font-weight: 700; 
+    font-family: inherit;
+    font-size: 17px;
     cursor: pointer;
+    margin-top: 30px; 
+    text-decoration: none; /* Asegura que no tenga subrayado si se usa en <a> */
+    text-align: center;
 }
+
+/* --- Estructura Base del Block-Cube (Manteniéndose fiel a tu diseño) --- */
 
 .block-cube {
     position: relative;
+    /* Añadimos un pequeño redondeo al cubo general para suavizarlo */
+    border-radius: 4px; 
 }
 
+/* Nuevo Degradado de Color (Azules y Púrpuras más profundos y definidos) */
 .block-cube .bg-top {
     position: absolute;
     height: 10px;
-    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(52,9,121,1) 37%, rgba(0,212,255,1) 94%);
+    /* Degradado actualizado */
+    background: linear-gradient(90deg, #1C0B40 0%, #3F0071 50%, #009FFF 100%);
     bottom: 100%;
     left: 5px;
     right: -5px;
     transform: skew(-45deg, 0);
     margin: 0;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
 }
 
 .block-cube .bg-top .bg-inner {
@@ -86,18 +113,22 @@ h1 {
     top: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(52,9,121,1) 37%, rgba(0,212,255,1) 94%);
+    /* Degradado actualizado */
+    background: linear-gradient(90deg, #1C0B40 0%, #3F0071 50%, #009FFF 100%);
+    border-radius: 4px;
 }
 
 .block-cube .bg-right {
     position: absolute;
-    background: rgba(0,212,255,1);
+    background: #009FFF; /* Azul vibrante */
     top: -5px;
     z-index: 0;
     bottom: 5px;
     width: 10px;
     left: 100%;
     transform: skew(0, -45deg);
+    border-bottom-right-radius: 4px;
+    border-top-right-radius: 4px;
 }
 
 .block-cube .bg-right .bg-inner {
@@ -105,16 +136,17 @@ h1 {
 }
 
 .block-cube .bg .bg-inner {
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s ease-in-out; /* Transición actualizada */
 }
 
 .block-cube .bg-inner {
-    background: #212121;
+    background: #121212; /* Color interior igual al fondo del body */
     position: absolute;
     left: 2px;
     top: 2px;
     right: 2px;
     bottom: 2px;
+    border-radius: 2px;
 }
 
 .block-cube .text {
@@ -127,28 +159,26 @@ h1 {
     z-index: 2;
 }
 
+/* --- Efectos de Foco (Focus) para Input --- */
 .block-cube.block-input input:focus ~ .bg-right .bg-inner,
 .block-cube.block-input input:focus ~ .bg-top .bg-inner,
-.block-cube.block-input input:focus ~ .bg-inner .bg-inner {
+.block-cube.block-input input:focus ~ .bg .bg-inner {
     top: 100%;
-    background: rgba(255, 255, 255, 0.5);
+    /* Color de foco más limpio y claro */
+    background: rgba(0, 212, 255, 0.8); 
 }
 
+/* --- Efectos de Hover/Focus para el Borde del Input --- */
 .block-cube.block-input .bg-top,
 .block-cube.block-input .bg-right,
 .block-cube.block-input .bg {
-    background: rgba(255, 255, 255, 0.5);
-    transition: background 0.2s ease-in-out;
+    background: rgba(255, 255, 255, 0.2); /* Borde claro y sutil */
+    transition: background 0.3s ease-in-out;
 }
 
 .block-cube.block-input .bg-right .bg-inner,
 .block-cube.block-input .bg-top .bg-inner {
-    transition: all 0.2s ease-in-out;
-}
-
-.block-cube.block-input:focus,
-.block-cube.block-input:hover {
-    /* On hover/focus, lighten backgrounds */
+    transition: all 0.3s ease-in-out;
 }
 
 .block-cube.block-input:focus .bg-top,
@@ -157,14 +187,17 @@ h1 {
 .block-cube.block-input:hover .bg-top,
 .block-cube.block-input:hover .bg-right,
 .block-cube.block-input:hover .bg {
-    background: rgba(255, 255, 255, 0.8);
+    /* Al enfocar/pasar el ratón, el borde se vuelve más visible */
+    background: rgba(0, 212, 255, 0.4); 
 }
 
+/* --- Efecto de Hover para el Botón --- */
 .block-cube.block-cube-hover:focus .bg .bg-inner,
 .block-cube.block-cube-hover:hover .bg .bg-inner {
     top: 100%;
 }
 
+/* --- Créditos (Mantenido) --- */
 .credits {
     position: fixed;
     left: 0;
@@ -172,15 +205,17 @@ h1 {
     padding: 15px 15px;
     width: 100%;
     z-index: 111;
+    text-align: center; /* Centrar los créditos */
 }
 
 .credits a {
-    opacity: 0.6;
+    opacity: 0.8; /* Más visible que antes */
     color: #fff;
-    font-size: 11px;
+    font-size: 12px;
     text-decoration: none;
 }
 
 .credits a:hover {
     opacity: 1;
+    color: #009FFF; /* Resalta el link al pasar el ratón */
 }

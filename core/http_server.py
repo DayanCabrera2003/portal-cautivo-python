@@ -1,7 +1,11 @@
 import ssl
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from utils.logger import logger  
 import urllib.parse
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from utils.logger import logger
+from core.auth_manager import validate_credentials
+  
+
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -45,11 +49,18 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             #Parse URL-encoded form data
             form = urllib.parse.parse_qs(post_data.decode('utf-8'))
             username = form.get('username', [''])[0]
+            password = form.get('password', [''])[0]
             logger.info(f"Received login attempt for username: '{username}'")
+            if validate_credentials(username, password):
+                file_path = "web/login_succes.html"
+            else:
+                file_path = "web/login_failed.html"
+            with open(file_path, "r", encoding="utf-8") as file:
+                response_html = file.read().format(username=username)
             self.send_response(200)
-            self.send_header("Content-type", "text/plain")
+            self.send_header("Content-type", "text/html")
             self.end_headers()
-            self.wfile.write(b"POST request received")
+            self.wfile.write(response_html.encode("utf-8"))
         except Exception as e:
             self.send_response(500)
             self.send_header("Content-type", "text/plain")
