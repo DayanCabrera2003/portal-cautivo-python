@@ -13,7 +13,10 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
         """Handle GET requests and serve the static HTML file."""
         try:
             # Define the path to the static file
-            file_path = "web/index.html"
+            if self.path == "/login_succes":
+                file_path = "web/login_succes.html"
+            else:
+                file_path = "web/index.html"
             
             # Open and read the file
             with open(file_path, "r", encoding="utf-8") as file:
@@ -56,10 +59,10 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
                 # Create session and set cookie
                 session_id = create_session({"username": username})
                 self.send_response(302)
-                self.send_header("Location", "/welcome")
+                self.send_header("Location", "/login_succes")
                 self.send_header("Set-Cookie", f"session_id={session_id}; HttpOnly; Path=/")
                 self.end_headers()
-                logger.info(f"User '{username}' authenticated. Session started and redirected to /welcome.")
+                logger.info(f"User '{username}' authenticated. Session started and redirected to /login_succes.")
             else:
                 file_path = "web/login_failed.html"
                 with open(file_path, "r", encoding="utf-8") as file:
