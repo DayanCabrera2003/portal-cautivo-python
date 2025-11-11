@@ -56,3 +56,17 @@ def allow_user_access(ip_address):
         logger.info(f"Successfully added rule to allow all outgoing traffic from {ip_address}.")
     else:
         logger.error(f"Failed to add rule for outgoing traffic from {ip_address}. Stderr: {stderr}")
+
+def revoke_access(ip_address):
+    """
+    Revoke network access for a specific IP address by removing the firewall exception rule, blocking their external network access again.
+    
+    Args:
+        ip_address (str): The IP address to revoke access for.
+    """
+    # Remove rule to block outgoing traffic from the IP
+    returncode, stdout, stderr = execute_command("iptables", ["-D", "OUTPUT", "-s", ip_address, "-j", "ACCEPT"])
+    if returncode == 0:
+        logger.info(f"Successfully removed rule to revoke outgoing traffic access for {ip_address}.")
+    else:
+        logger.error(f"Failed to remove rule for outgoing traffic from {ip_address}. Stderr: {stderr}")
