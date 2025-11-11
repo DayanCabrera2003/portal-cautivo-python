@@ -1,4 +1,5 @@
 from firewall.cli_executor import execute_command
+from utils.logger import logger
 
 def initialize_rules():
     """
@@ -21,6 +22,17 @@ def initialize_rules():
     
     # Allow traffic to the captive portal server
     execute_command("iptables", ["-A", "INPUT", "-p", "tcp", "--dport", "8080", "-j", "ACCEPT"])
+
+def initialize_firewall():
+    """
+    Initialize the firewall by setting the default policy for external network traffic (FORWARD chain) to DROP.
+    This blocks forwarding traffic until users are authenticated.
+    """
+    returncode, stdout, stderr = execute_command("iptables", ["-P", "FORWARD", "DROP"])
+    if returncode == 0:
+        logger.info("Successfully set default policy for FORWARD chain to DROP, blocking external network traffic.")
+    else:
+        logger.error(f"Failed to set FORWARD policy to DROP. Stderr: {stderr}")
 
 def allow_user_access(ip_address):
     """
