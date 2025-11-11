@@ -27,12 +27,21 @@ def initialize_firewall():
     """
     Initialize the firewall by setting the default policy for external network traffic (FORWARD chain) to DROP.
     This blocks forwarding traffic until users are authenticated.
+    Includes an exception to allow inbound HTTP traffic to the captive portal server.
     """
-    returncode, stdout, stderr = execute_command("iptables", ["-P", "FORWARD", "DROP"])
-    if returncode == 0:
+    # Allow inbound HTTP traffic to the captive portal server (port 8080)
+    returncode_allow, stdout_allow, stderr_allow = execute_command("iptables", ["-I", "INPUT", "-p", "tcp", "--dport", "8080", "-j", "ACCEPT"])
+    if returncode_allow == 0:
+        logger.info("Successfully added rule to allow inbound HTTP traffic on port 8080.")
+    else:
+        logger.error(f"Failed to add rule for inbound HTTP traffic. Stderr: {stderr_allow}")
+    
+    # Set default policy for FORWARD chain to DROP
+    returncode_drop, stdout_drop, stderr_drop = execute_command("iptables", ["-P", "FORWARD", "DROP"])
+    if returncode_drop == 0:
         logger.info("Successfully set default policy for FORWARD chain to DROP, blocking external network traffic.")
     else:
-        logger.error(f"Failed to set FORWARD policy to DROP. Stderr: {stderr}")
+        logger.error(f"Failed to set FORWARD policy to DROP. Stderr: {stderr_drop}")
 
 def allow_user_access(ip_address):
     """
