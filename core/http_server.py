@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from utils.logger import logger
 from core.auth_manager import validate_credentials
 from core.session_manager import create_session, get_session
-  
+from firewall.firewall_manager import allow_user_access
 
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
@@ -79,6 +79,11 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
                 self.send_header("Set-Cookie", f"session_id={session_id}; HttpOnly; Path=/")
                 self.end_headers()
                 logger.info(f"User '{username}' authenticated. Session started and redirected to /login_succes.")
+                
+                #Retrieve client's source IP and allow acces
+                client_ip = self.client_address[0]
+                allow_user_access(client_ip)
+                logger.info(f"Firewall acces grantes for IP {client_ip} after authentication")
             else:
                 file_path = "web/login_failed.html"
                 with open(file_path, "r", encoding="utf-8") as file:
