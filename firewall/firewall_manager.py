@@ -45,11 +45,14 @@ def initialize_firewall():
 
 def allow_user_access(ip_address):
     """
-    Allow network access for a specific IP address after successful authentication.
+    Allow network access for a specific IP address after successful authentication by adding a rule to accept all outgoing traffic.
     
     Args:
         ip_address (str): The IP address to allow access for.
     """
-    # Add rule to allow all traffic from the authenticated IP
-    execute_command("iptables", ["-I", "INPUT", "-s", ip_address, "-j", "ACCEPT"])
-    execute_command("iptables", ["-I", "FORWARD", "-s", ip_address, "-j", "ACCEPT"])
+    # Add rule to allow all outgoing traffic from the authenticated IP
+    returncode, stdout, stderr = execute_command("iptables", ["-I", "OUTPUT", "-s", ip_address, "-j", "ACCEPT"])
+    if returncode == 0:
+        logger.info(f"Successfully added rule to allow all outgoing traffic from {ip_address}.")
+    else:
+        logger.error(f"Failed to add rule for outgoing traffic from {ip_address}. Stderr: {stderr}")
