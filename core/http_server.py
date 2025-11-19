@@ -5,14 +5,40 @@ import http.cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from utils.logger import logger
 from core.auth_manager import validate_credentials
-from core.session_manager import create_session, get_session
-from firewall.firewall_manager import allow_user_access
+from core.session_manager import create_session, get_session, destroy_session
+from firewall.firewall_manager import allow_user_access, revoke_access
   
 
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET requests and serve the static HTML file."""
+        if self.path == "/logout":
+            # Handle logout: retrieve session ID, destroy session, revoke access, expire cookie
+            session_id = None
+            user_ip = None
+            if 'Cookie' in self.headers:
+                cookie = http.cookies.SimpleCookie(self.headers['Cookie'])
+                if 'session_id' in cookie:
+                    session_id = cookie['session_id'].value
+                    session = get_session(session_id)
+                    if session:
+                        user_ip = session["user_info"].get("ip")
+                        destroy_session(session_id)
+                        logger.info(f"Session {session_id} destroyed for logout")
+            
+            if user_ip:
+                revoke_access(user_ip)
+                logger.info(f"Firewall access revoked for IP {user_ip} on logout")
+            
+            # Send response with expired cookie
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.send_header("Set-Cookie", "session_id=; HttpOnly; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT")
+            self.end_headers()
+            self.wfile.write(b"<html><body>Logged out successfully.</body></html>")
+            return
+        
         # Check for session cookie and validate
         if 'Cookie' in self.headers:
             cookie = http.cookies.SimpleCookie(self.headers['Cookie'])
@@ -74,7 +100,8 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             logger.info(f"Received login attempt for username: '{username}'")
             if validate_credentials(username, password):
                 # Create session and set cookie
-                session_id = create_session({"username": username})
+                client_ip = self.client_address[0]
+                session_id = create_session({"username": username, "ip": client_ip})
                 self.send_response(302)
                 self.send_header("Location", "/login_succes")
                 self.send_header("Set-Cookie", f"session_id={session_id}; HttpOnly; Path=/")
@@ -82,7 +109,6 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
                 logger.info(f"User '{username}' authenticated. Session started and redirected to /login_succes.")
                 
                 #Retrieve client's source IP and allow acces
-                client_ip = self.client_address[0]
                 allow_user_access(client_ip)
                 logger.info(f"Firewall acces grantes for IP {client_ip} after authentication")
             else:

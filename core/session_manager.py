@@ -47,6 +47,23 @@ def get_session(session_id):
             logger.warning(f"Session not found: {session_id}")
     return None
 
+def destroy_session(session_id):
+    """
+    Destroy the session with the given session_id.
+    
+    Args:
+        session_id (str): The session ID to destroy.
+    
+    Returns:
+        bool: True if the session was destroyed, False if not found.
+    """
+    with _sessions_lock:
+        if session_id in _sessions:
+            del _sessions[session_id]
+            logger.info(f"Session {session_id} destroyed")
+            return True
+    return False
+
 def cleanup_expired_sessions():
     """
     Iterate over all active sessions, check their expiration timestamp using time.time(),
