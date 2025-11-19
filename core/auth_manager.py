@@ -46,6 +46,9 @@ def validate_credentials(username, password):
             if computed_hash == stored_hash:
                 logger.info(f"Authentification succes for user '{username}'")
                 return True
+            else:
+                logger.warning(f"Authentication failed: incorrect password for '{username}'")
+                return False
         else:
             logger.warning(f"Athentification failed for the user '{username}'")
             return False
