@@ -2,11 +2,12 @@ import ssl
 import urllib.parse
 import http.cookies
 
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from utils.logger import logger
 from core.auth_manager import validate_credentials
 from core.session_manager import create_session, get_session
 from firewall.firewall_manager import allow_user_access
+  
 
 
 class CaptivePortalHandler(BaseHTTPRequestHandler):
@@ -100,9 +101,9 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             logger.error(f"Error handling POST request: {str(e)}")
 
 def start_server(host="0.0.0.0", port=8080, secure=False):
-    """Start the HTTP or HTTPS server."""
+    """Start the HTTP or HTTPS server with concurrent request handling."""
     server_address = (host, port)
-    httpd = HTTPServer(server_address, CaptivePortalHandler)
+    httpd = ThreadingHTTPServer(server_address, CaptivePortalHandler)
 
     if secure:
         # Configure SSL context for HTTPS
