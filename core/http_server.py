@@ -70,6 +70,18 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
             
+            # Personalize content for login_succes
+            if self.path == "/login_succes":
+                username = "Guest"
+                if 'Cookie' in self.headers:
+                    cookie = http.cookies.SimpleCookie(self.headers['Cookie'])
+                    if 'session_id' in cookie:
+                        session_id = cookie['session_id'].value
+                        session = get_session(session_id)
+                        if session:
+                            username = session["user_info"].get("username", "Guest")
+                content = content.format(username=username)
+            
             # Send HTTP response headers
             self.send_response(200)
             self.send_header("Content-type", "text/html")
