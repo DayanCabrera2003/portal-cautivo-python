@@ -208,3 +208,5 @@ __marimo__/
 /data/portal.log
 /data/users.json
 *.json
+/data/cert.pem
+/data/key.pem

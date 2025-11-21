@@ -126,7 +126,7 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             self.wfile.write(f"500 Internal Server Error: {str(e)}".encode("utf-8"))
             logger.error(f"Error handling POST request: {str(e)}")
 
-def start_server(host="0.0.0.0", port=8080, secure=False):
+def start_server(host="0.0.0.0", port=8080, secure=True):
     """Start the HTTP or HTTPS server with concurrent request handling."""
     server_address = (host, port)
     httpd = ThreadingHTTPServer(server_address, CaptivePortalHandler)
