@@ -75,3 +75,19 @@ def revoke_access(ip_address):
         logger.info(f"Successfully removed rule to revoke outgoing traffic access for {ip_address}.")
     else:
         logger.error(f"Failed to remove rule for outgoing traffic from {ip_address}. Stderr: {stderr}")
+
+def enable_ip_masquerade(outgoing_interface):
+    """
+    Enable IP Masquerading (NAT/SNAT) on the specified outgoing interface.
+    This provides IP address translation for the internal network, allowing outbound traffic to be routed through the interface.
+    
+    Args:
+        outgoing_interface (str): The name of the outgoing network interface (e.g., 'eth0').
+    """
+    returncode, stdout, stderr = execute_command("iptables", [
+        "-t", "nat", "-A", "POSTROUTING", "-o", outgoing_interface, "-j", "MASQUERADE"
+    ])
+    if returncode == 0:
+        logger.info(f"Successfully enabled IP masquerading on outgoing interface {outgoing_interface}.")
+    else:
+        logger.error(f"Failed to enable IP masquerading on {outgoing_interface}. Stderr: {stderr}")
