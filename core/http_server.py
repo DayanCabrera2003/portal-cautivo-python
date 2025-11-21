@@ -1,6 +1,7 @@
 import ssl
 import urllib.parse
 import http.cookies
+import re
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from utils.logger import logger
@@ -97,6 +98,23 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             form = urllib.parse.parse_qs(post_data.decode('utf-8'))
             username = form.get('username', [''])[0]
             password = form.get('password', [''])[0]
+            
+            # Input validation
+            if not re.match(r'^[a-zA-Z0-9_-]{3,20}$', username):
+                self.send_response(400)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"Invalid username: must be 3-20 characters, alphanumeric with underscores or hyphens.")
+                logger.warning(f"Invalid username input: '{username}'")
+                return
+            if not re.match(r'^[a-zA-Z0-9_-]{6,50}$', password):
+                self.send_response(400)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"Invalid password: must be 6-50 characters, alphanumeric with underscores or hyphens.")
+                logger.warning(f"Invalid password input for username: '{username}'")
+                return
+            
             logger.info(f"Received login attempt for username: '{username}'")
             if validate_credentials(username, password):
                 # Create session and set cookie
