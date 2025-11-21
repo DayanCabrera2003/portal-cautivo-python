@@ -1,6 +1,9 @@
 import secrets
 import time
 import threading
+import csv
+import os
+from datetime import datetime
 
 from utils.logger import logger
 from firewall.firewall_manager import revoke_access
@@ -11,6 +14,25 @@ _sessions_lock = threading.Lock()
 
 # Session timeout in seconds (e.g., 1 hour)
 SESSION_TIMEOUT = 3600
+
+def log_session_action(action, username, ip):
+    """
+    Log session actions to a CSV file.
+    
+    Args:
+        action (str): The action type (LOGIN/LOGOUT/EXPIRED).
+        username (str): The username.
+        ip (str): The IP address.
+    """
+    file_path = "data/session_log.csv"
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        # Write headers if file is empty
+        if os.stat(file_path).st_size == 0:
+            writer.writerow(["timestamp", "username", "ip", "action"])
+        writer.writerow([datetime.now().isoformat(), username, ip, action])
 
 def create_session(user_info):
     """
@@ -28,6 +50,7 @@ def create_session(user_info):
     }
     with _sessions_lock:
         _sessions[session_id] = session_data
+    log_session_action("LOGIN", user_info["username"], user_info["ip"])
     logger.info(f"Session created for user: {user_info} with session {session_id}")
     return session_id
 
@@ -59,6 +82,8 @@ def destroy_session(session_id):
     """
     with _sessions_lock:
         if session_id in _sessions:
+            session = _sessions[session_id]
+            log_session_action("LOGOUT", session["user_info"]["username"], session["user_info"]["ip"])
             del _sessions[session_id]
             logger.info(f"Session {session_id} destroyed")
             return True
@@ -79,9 +104,11 @@ def cleanup_expired_sessions():
     
     for session_id, session in expired_sessions:
         user_ip = session["user_info"].get("ip")
+        username = session["user_info"].get("username", "unknown")
+        log_session_action("EXPIRED", username, user_ip)
         if user_ip:
             revoke_access(user_ip)
             logger.info(f"Revoked access for IP {user_ip} due to expired session {session_id}")
         with _sessions_lock:
             del _sessions[session_id]
-        logger.info(f"Expired session {session_id} cleaned up for user {session['user_info'].get('username', 'unknown')}")
+        logger.info(f"Expired session {session_id} cleaned up for user {username}")
