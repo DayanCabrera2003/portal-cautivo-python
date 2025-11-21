@@ -5,6 +5,7 @@ import re
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from utils.logger import logger
+from utils.config import GATEWAY_IP, SERVER_PORT
 from core.auth_manager import validate_credentials
 from core.session_manager import create_session, get_session, destroy_session
 from firewall.firewall_manager import allow_user_access, revoke_access
@@ -14,6 +15,29 @@ from firewall.firewall_manager import allow_user_access, revoke_access
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET requests and serve the static HTML file."""
+        # Auto-redirect for captive portal detection (HTTP 302)
+        # If user is not authenticated and trying to access external URLs
+        if self.path not in ["/", "/login", "/index.html", "/index.css", "/logout", "/login_succes.html", "/login_failed.html"]:
+            session_id = None
+            if 'Cookie' in self.headers:
+                cookie = http.cookies.SimpleCookie(self.headers['Cookie'])
+                if 'session_id' in cookie:
+                    session_id = cookie['session_id'].value
+            
+            session = get_session(session_id) if session_id else None
+            
+            # Redirect unauthenticated users to login page
+            if not session:
+                logger.info(f"Redirecting unauthenticated request from {self.path} to portal login")
+                self.send_response(302)  # HTTP 302 Redirect for captive portal detection
+                portal_url = f"http://{self.headers.get('Host', GATEWAY_IP)}:{SERVER_PORT}/"
+                self.send_header("Location", portal_url)
+                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
+                self.end_headers()
+                return
+        
         if self.path == "/logout":
             # Handle logout: retrieve session ID, destroy session, revoke access, expire cookie
             session_id = None

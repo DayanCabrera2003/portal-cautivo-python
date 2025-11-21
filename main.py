@@ -3,8 +3,9 @@ import time
 
 from core.http_server import start_server
 from core.session_manager import cleanup_expired_sessions
+from firewall.firewall_manager import initialize_firewall, enable_ip_masquerade, enable_captive_portal_redirect
 from utils.logger import logger
-from utils.config import SERVER_PORT
+from utils.config import SERVER_PORT, GATEWAY_IP
 
 def maintenance_thread():
     """Daemon thread to periodically clean up expired sessions."""
@@ -15,6 +16,16 @@ def maintenance_thread():
 
 def main():
     try:
+        # Initialize firewall rules
+        logger.info("Initializing firewall for captive portal...")
+        initialize_firewall()
+        
+        # Enable IP masquerading for NAT (change 'eth0' to your WAN interface if needed)
+        enable_ip_masquerade("eth0")
+        
+        # Enable automatic captive portal detection via HTTP redirect
+        enable_captive_portal_redirect(GATEWAY_IP, SERVER_PORT)
+        
         # Start the maintenance thread
         thread = threading.Thread(target=maintenance_thread, daemon=True)
         thread.start()

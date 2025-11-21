@@ -64,17 +64,23 @@ def allow_user_access(ip_address):
 
 def revoke_access(ip_address):
     """
-    Revoke network access for a specific IP address by removing the firewall exception rule, blocking their external network access again.
+    Revoke network access for the given IP address by removing its iptables rule.
     
     Args:
         ip_address (str): The IP address to revoke access for.
     """
-    # Remove rule to block outgoing traffic from the IP
-    returncode, stdout, stderr = execute_command("iptables", ["-D", "OUTPUT", "-s", ip_address, "-j", "ACCEPT"])
+    # Remove FORWARD rule for outgoing traffic from the IP
+    returncode, stdout, stderr = execute_command("iptables", ["-D", "FORWARD", "-s", ip_address, "-j", "ACCEPT"])
     if returncode == 0:
-        logger.info(f"Successfully removed rule to revoke outgoing traffic access for {ip_address}.")
+        logger.info(f"Successfully removed FORWARD rule to revoke access for {ip_address}.")
     else:
-        logger.error(f"Failed to remove rule for outgoing traffic from {ip_address}. Stderr: {stderr}")
+        logger.error(f"Failed to remove FORWARD rule for {ip_address}. Stderr: {stderr}")
+    
+    # Remove FORWARD rule for incoming established/related traffic
+    execute_command("iptables", [
+        "-D", "FORWARD", "-d", ip_address,
+        "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"
+    ])
 
 def enable_ip_masquerade(outgoing_interface):
     """
@@ -91,3 +97,34 @@ def enable_ip_masquerade(outgoing_interface):
         logger.info(f"Successfully enabled IP masquerading on outgoing interface {outgoing_interface}.")
     else:
         logger.error(f"Failed to enable IP masquerading on {outgoing_interface}. Stderr: {stderr}")
+
+def enable_captive_portal_redirect(portal_ip, portal_port=8080):
+    """
+    Redirect all HTTP/HTTPS traffic to the captive portal for automatic detection.
+    This enables OS captive portal detection mechanisms.
+    
+    Args:
+        portal_ip (str): IP address of the captive portal (usually gateway IP).
+        portal_port (int): Port where the captive portal is listening.
+    """
+    # Redirect HTTP (port 80) to captive portal - for automatic detection
+    returncode, stdout, stderr = execute_command("iptables", [
+        "-t", "nat", "-A", "PREROUTING",
+        "-p", "tcp", "--dport", "80",
+        "-j", "DNAT", "--to-destination", f"{portal_ip}:{portal_port}"
+    ])
+    if returncode == 0:
+        logger.info(f"HTTP redirect to captive portal enabled: {portal_ip}:{portal_port}")
+    else:
+        logger.error(f"Failed to enable HTTP redirect: {stderr}")
+    
+    # Redirect HTTPS detection URLs (port 443) - some OS use HTTPS for detection
+    returncode, stdout, stderr = execute_command("iptables", [
+        "-t", "nat", "-A", "PREROUTING",
+        "-p", "tcp", "--dport", "443",
+        "-j", "DNAT", "--to-destination", f"{portal_ip}:{portal_port}"
+    ])
+    if returncode == 0:
+        logger.info(f"HTTPS redirect to captive portal enabled")
+    else:
+        logger.warning(f"Failed to enable HTTPS redirect (HTTP redirect is active): {stderr}")
