@@ -14,7 +14,7 @@ SESSION_TIMEOUT = 3600
 
 def create_session(user_info):
     """
-    Create a new session for the user_info.
+    Create a new session for the user_info, including the client's source IP address.
     Returns a secure session ID.
     
     Args:

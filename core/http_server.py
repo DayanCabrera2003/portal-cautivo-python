@@ -46,13 +46,17 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             if 'session_id' in cookie:
                 session_id = cookie['session_id'].value
                 session = get_session(session_id)
-                if session:
+                current_ip = self.client_address[0]
+                stored_ip = session["user_info"].get("ip") if session else None
+                if session and current_ip == stored_ip:
                     # Valid session, redirect to access granted endpoint (using existing /login_succes as the success page)
                     self.send_response(302)
                     self.send_header("Location", "/login_succes")
                     self.end_headers()
                     logger.info(f"Valid session for user '{session.get('username', 'unknown')}'. Redirected to /login_succes.")
                     return
+                elif session:
+                    logger.warning(f"IP mismatch for session {session_id}: current IP {current_ip}, stored IP {stored_ip}. Treating as invalid session.")
         
         # If no valid session, serve the appropriate page
         try:
