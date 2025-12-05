@@ -1,0 +1,5 @@
+2025-12-04 09:56:50,045 - INFO -Working directory: /home/dayan-cc/Documents/Escuela/Redes/Proyecto_portal_cautivo/portal-cautivo-python
+2025-12-04 09:56:50,046 - INFO -Web files directory: /home/dayan-cc/Documents/Escuela/Redes/Proyecto_portal_cautivo/portal-cautivo-python/web
+2025-12-04 09:56:50,046 - INFO -Starting session cleanup maintenance thread
+2025-12-04 09:56:50,047 - INFO -Starting the Captive Portal server on 0.0.0.0:8080...
+2025-12-04 09:56:50,050 - INFO -Starting HTTP server on 0.0.0.0:8080

@@ -15,6 +15,60 @@ from firewall.firewall_manager import allow_user_access, revoke_access
 class CaptivePortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET requests and serve the static HTML file."""
+        
+        # ========================================
+        # CAPTIVE PORTAL DETECTION ENDPOINTS
+        # ========================================
+        # Estos endpoints son usados por diferentes sistemas operativos para detectar portales cautivos
+        
+        # Android - Google Connectivity Check
+        if self.path in ["/generate_204", "/gen_204"]:
+            logger.info(f"Android captive portal detection from {self.client_address[0]}")
+            # Responder con 302 redirect en lugar de 204 para forzar la detección del portal
+            self.send_response(302)
+            portal_url = f"http://{GATEWAY_IP}:{SERVER_PORT}/"
+            self.send_header("Location", portal_url)
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            return
+        
+        # iOS/macOS - Apple Captive Portal Detection
+        if self.path in ["/hotspot-detect.html", "/library/test/success.html"]:
+            logger.info(f"iOS/macOS captive portal detection from {self.client_address[0]}")
+            # Apple espera contenido HTML diferente a "Success" para detectar portal cautivo
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            # Responder con HTML que NO sea "Success" para activar el portal
+            self.wfile.write(b"<HTML><HEAD><TITLE>Captive Portal</TITLE></HEAD><BODY>Captive Portal</BODY></HTML>")
+            return
+        
+        # Windows - Microsoft Connect Test
+        if self.path in ["/connecttest.txt", "/ncsi.txt"]:
+            logger.info(f"Windows captive portal detection from {self.client_address[0]}")
+            # Windows espera "Microsoft Connect Test" pero devolvemos algo diferente
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            self.wfile.write(b"Captive Portal")
+            return
+        
+        # Firefox - Mozilla Connectivity Check
+        if self.path in ["/success.txt", "/canonical.html"]:
+            logger.info(f"Firefox captive portal detection from {self.client_address[0]}")
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            # Devolver algo diferente a "success" para activar detección
+            self.wfile.write(b"captive")
+            return
+        
+        # ========================================
+        # AUTO-REDIRECT FOR EXTERNAL URLS
+        # ========================================
         # Auto-redirect for captive portal detection (HTTP 302)
         # If user is not authenticated and trying to access external URLs
         if self.path not in ["/", "/login", "/index.html", "/index.css", "/logout", "/login_succes.html", "/login_failed.html"]:
@@ -184,18 +238,27 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
             self.wfile.write(f"500 Internal Server Error: {str(e)}".encode("utf-8"))
             logger.error(f"Error handling POST request: {str(e)}")
 
-def start_server(host="0.0.0.0", port=8080, secure=True):
+def start_server(host="0.0.0.0", port=8080, secure=False):
     """Start the HTTP or HTTPS server with concurrent request handling."""
     server_address = (host, port)
     httpd = ThreadingHTTPServer(server_address, CaptivePortalHandler)
 
     if secure:
         # Configure SSL context for HTTPS
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(certfile="data/ssl/server.crt", keyfile="data/ssl/server.key")
-        httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
-        logger.info(f"Starting HTTPS server on {host}:{port}")
-    else:
+        import os
+        cert_file = "data/cert.pem"
+        key_file = "data/key.pem"
+        
+        if os.path.exists(cert_file) and os.path.exists(key_file):
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file)
+            httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
+            logger.info(f"Starting HTTPS server on {host}:{port}")
+        else:
+            logger.warning(f"SSL certificates not found. Starting HTTP server instead.")
+            secure = False
+    
+    if not secure:
         logger.info(f"Starting HTTP server on {host}:{port}")
 
     try:

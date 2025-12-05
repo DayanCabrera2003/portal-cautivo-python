@@ -29,12 +29,40 @@ def initialize_firewall():
     This blocks forwarding traffic until users are authenticated.
     Includes an exception to allow inbound HTTP traffic to the captive portal server.
     """
+    # Redirect HTTP traffic from port 80 to 8080 for captive portal detection
+    returncode_redirect, stdout_redirect, stderr_redirect = execute_command("iptables", [
+        "-t", "nat", "-A", "PREROUTING", "-p", "tcp", "--dport", "80", 
+        "-j", "REDIRECT", "--to-ports", "8080"
+    ])
+    if returncode_redirect == 0:
+        logger.info("Successfully added NAT rule to redirect port 80 to 8080.")
+    else:
+        logger.error(f"Failed to add NAT redirect rule. Stderr: {stderr_redirect}")
+    
     # Allow inbound HTTP traffic to the captive portal server (port 8080)
     returncode_allow, stdout_allow, stderr_allow = execute_command("iptables", ["-I", "INPUT", "-p", "tcp", "--dport", "8080", "-j", "ACCEPT"])
     if returncode_allow == 0:
         logger.info("Successfully added rule to allow inbound HTTP traffic on port 8080.")
     else:
         logger.error(f"Failed to add rule for inbound HTTP traffic. Stderr: {stderr_allow}")
+    
+    # Also allow port 80 for captive portal detection (many devices try port 80 first)
+    returncode_allow80, stdout_allow80, stderr_allow80 = execute_command("iptables", ["-I", "INPUT", "-p", "tcp", "--dport", "80", "-j", "ACCEPT"])
+    if returncode_allow80 == 0:
+        logger.info("Successfully added rule to allow inbound HTTP traffic on port 80.")
+    else:
+        logger.error(f"Failed to add rule for port 80. Stderr: {stderr_allow80}")
+    
+    # Allow DHCP traffic (critical for clients to get IP addresses)
+    logger.info("Allowing DHCP traffic...")
+    execute_command("iptables", ["-A", "INPUT", "-p", "udp", "--dport", "67", "-j", "ACCEPT"])
+    execute_command("iptables", ["-A", "INPUT", "-p", "udp", "--dport", "68", "-j", "ACCEPT"])
+    execute_command("iptables", ["-A", "OUTPUT", "-p", "udp", "--sport", "67", "-j", "ACCEPT"])
+    
+    # Allow DNS traffic (critical for captive portal detection)
+    logger.info("Allowing DNS traffic...")
+    execute_command("iptables", ["-A", "INPUT", "-p", "udp", "--dport", "53", "-j", "ACCEPT"])
+    execute_command("iptables", ["-A", "INPUT", "-p", "tcp", "--dport", "53", "-j", "ACCEPT"])
     
     # Set default policy for FORWARD chain to DROP
     returncode_drop, stdout_drop, stderr_drop = execute_command("iptables", ["-P", "FORWARD", "DROP"])
